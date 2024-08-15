@@ -1,0 +1,14 @@
+Package: HOGRCDM
+Type: Package
+Title: Temperature Conversion Package for Demonstration
+Version: 0.0.1.0
+Authors@R: 
+    person(given = "Jia", 
+           family = "Liu", 
+           role = c("aut", "cre"), 
+           email = "liuj961@nenu.edu.cn")
+Description: A package for fitting higher order general response model.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
