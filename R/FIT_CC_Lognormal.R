@@ -18,8 +18,8 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   # E-step to obtain mc_samples of factors for each observation
   sample_single_thetas <- function(m, k, mc_samples, d1, d2, s_arr,Sigma_theta){
-    custom_library_path <- "/burg/home/jl6795/R/x86_64-pc-linux-gnu-library/4.3"
-    library(TruncatedNormal,lib.loc = custom_library_path)
+    # custom_library_path <- "/burg/home/jl6795/R/x86_64-pc-linux-gnu-library/4.3"
+    # library(TruncatedNormal,lib.loc = custom_library_path)
     inv_term <- solve(d1%*%Sigma_theta%*%t(d1)+diag(m))
     cov_vo <- Sigma_theta - Sigma_theta%*%t(d1)%*%inv_term %*% d1%*%Sigma_theta
     cov_v1 <- diag(1/s_arr) %*% (d1%*%Sigma_theta%*%t(d1) + diag(m)) %*% diag(1/s_arr)
@@ -75,7 +75,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   ModelStruc_Bottom=SettingList$ModelStruc_Bottom
   isBifactor=ModelSetList$ModelStruc_Higher=="Bifactor"
   maxIter=SettingList$maxIter
-  ReturnLikelihood=SettingList$maxIter
+  ReturnLikelihood=SettingList$ReturnLikelihood
   epsCheck=SettingList$epsCheck
   Passing=SettingList$Passing
   ModelStruc_Bottom=ModelSetList$ModelStruc_Bottom
@@ -92,6 +92,21 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   Slope_B<-InitAll$Slope_B_INI
   Sigma_theta<-InitAll$Sigma_theta_INI
   ta<-InitAll$SD#initial values for sd
+  
+  
+  
+  if(SettingList$PRINT==T){
+    PRINT=T
+    
+    if(is.null(SettingList$PR_ITER_NUM)){
+      PR_ITER_NUM=5
+    } else{
+      PR_ITER_NUM=SettingList$PR_ITER_NUM
+    }
+    
+  } else{
+    PRINT=F
+  }
   
   
   
@@ -310,15 +325,18 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   while((passing<Passing & i<maxIter)){
     
+    if((PRINT&i%%PR_ITER_NUM==0)){
+      print(Slope_B)###This can be revised to print more information
+      print(Interc_B)
+      print( Slope_H)
+      print( Interc_H)
+      print(Sigma_theta)
+      print(ta)
+    }
     
-    # if(i%%10==0){
-    #      print(Interc_B)
-    print(Slope_B)
-    print( Slope_H)
-    print( Interc_H)
-    print(Sigma_theta)
-    print(ta)
-    # }
+    
+    
+   
     
     
     
@@ -432,9 +450,9 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
     
 
-    Beta<-sapply(1:J, OptBott_LogNor_Confir, x=Data_x,
-                 Res=Data_Res,Q_mat=Q_Aug,weights=WEI,
-                simplify = T)
+Beta<-sapply(1:J, OptBott_Confir, x=Data_x, Res=Data_Res,
+             Q_mat=Q_Aug,weights=WEI,Family="gaussian", Link="identity",
+                 simplify = T)
 
 
     Interc_B <- Beta[1,]

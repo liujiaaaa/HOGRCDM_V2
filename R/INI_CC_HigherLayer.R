@@ -1,6 +1,6 @@
 
 INI_CC_HigherLayer<-function(Res, size_list,ModelSetList,
-                              Beta0,Beta1_Mat0,Q_Ht,Ini_AlphaSize=5000){
+                             Beta0,Beta1_Mat0,Q_Ht,Ini_AlphaSize=5000){
   
   library(mvtnorm)
   
@@ -14,15 +14,15 @@ INI_CC_HigherLayer<-function(Res, size_list,ModelSetList,
     isBifactor<-F
   }
   
- # D=size_list$D
+  # D=size_list$D
   
   
   if(isBifactor){
     D=size_list$D-1
   }else{
-      D=size_list$D
-    }
-
+    D=size_list$D
+  }
+  
   time_start<-proc.time()
   library(mvnfast)
   
@@ -47,7 +47,7 @@ INI_CC_HigherLayer<-function(Res, size_list,ModelSetList,
   Beta1_Mat<-Beta1_Mat0
   
   
-
+  
   
   
   
@@ -213,13 +213,13 @@ INI_CC_HigherLayer<-function(Res, size_list,ModelSetList,
   
   AB<-Poss_AttrUp%*%t_Beta1_Mat+Beta0_matrix
   
-  if(model=="Poission"|model=="Gamma"){
+  if(model=="Poisson"|model=="Gamma"){
     #########################
     AB[AB<0]<- 0.1
     ##########################
   }
   
-  if(model=="Poission"){
+  if(model=="Poisson"){
     PRT1[,]<-dpois(as.vector(ResM),as.vector(AB[rLN,]))
   }else if(model=="LLM"){
     
@@ -292,60 +292,92 @@ INI_CC_HigherLayer<-function(Res, size_list,ModelSetList,
   InitL<- IniFUN_Probit(DATA=DATA_ALPHA, N=length(samTh),J=K,K=D,eplison_Layer0=1e-04,TARGET=TARGET)
   
   Lam_1_0<-t(InitL$Init_B_Slope1)
- # Lam_1_0[( Lam_1_0<0& Lam_1_0!=0)]<-0.1
+  # Lam_1_0[( Lam_1_0<0& Lam_1_0!=0)]<-0.1
   Lam_0_0<-InitL$Init_B_Intec1
   
-  Q_H_INI<-InitL$Init_B_Slope1
-   for (ii in 1: nrow( Q_H_INI)) {
-     Q_H_INI[ii,]<- Q_H_INI[ii,]/max(abs( Q_H_INI[ii,]))
-   }
+  
+  
+  if((ModelSetList$ModelFrame_Higher=="Confirmatory")){
     
-  if( isBifactor){
-    Q_H_C<-Q_H[,-1]
-  }else{
-    Q_H_C<-Q_H
-  }
-  
-  
-  
-  
-
-  KK=ncol( Q_H_C)
-  DD<-nrow( Q_H_C)
-
-  Cost_matrix<-matrix(NA,KK,KK)
-  for(ll in 1:KK){
-    for(mm in 1:KK){
-      Cost_matrix[ll,mm]<-sum(abs(Q_H_INI[,mm]-Q_H_C[,ll]))
+    Q_H_INI<-InitL$Init_B_Slope1
+    for (ii in 1: nrow( Q_H_INI)) {
+      Q_H_INI[ii,]<- Q_H_INI[ii,]/max(abs( Q_H_INI[ii,]))
     }
+    
+    if( isBifactor){
+      Q_H_C<-Q_H[,-1]
+    }else{
+      Q_H_C<-Q_H
+    }
+    
+    KK=ncol( Q_H_C)
+    DD<-nrow( Q_H_C)
+    
+    Cost_matrix<-matrix(NA,KK,KK)
+    for(ll in 1:KK){
+      for(mm in 1:KK){
+        Cost_matrix[ll,mm]<-sum(abs(Q_H_INI[,mm]-Q_H_C[,ll]))
+      }
+    }
+    Test<-HungarianSolver(Cost_matrix)
+    if(sum(abs(Test$pairs[,2]-(1:KK)))!=0) {
+      print(Test$pairs[,2]);Hungarian=T
+    }else{
+      Hungarian=F
+    }
+    Lam_1_0C<- Lam_1_0[Test$pairs[,2],]
+    
+    
+    if(ModelSet$ModelFrame_Bottom=="Exploratory"){
+      
+      Q_H_INI2<- t(Lam_1_0C)
+      for (jj in 1: ncol( Q_H_INI2)) {
+        Q_H_INI2[,jj]<- Q_H_INI2[,jj]/max(abs( Q_H_INI2[,jj]))
+      }
+      
+      Cost_matrix2<-matrix(NA,DD,DD)
+      for(ll in 1:DD){
+        for(mm in 1:DD){
+          Cost_matrix2[ll,mm]<-sum(abs(Q_H_INI2[mm,]-Q_H_C[ll,]))
+        }
+      }
+      Test2<-HungarianSolver(Cost_matrix2)
+      if(sum(abs(Test2$pairs[,2]-(1:DD)))!=0) {
+        print(Test2$pairs[,2]);Hungarian2=T
+      }else{
+        Hungarian2=F
+      }
+      Lam_1_0D<- Lam_1_0C[,Test2$pairs[,2]]
+      
+      Lam_1_0C<- Lam_1_0D
+      
+      Beta1_Mat0<- Beta1_Mat0[,Test2$pairs[,2]]
+      
+      
+    }
+    
   }
-  Test<-HungarianSolver(Cost_matrix)
-  if(sum(abs(Test$pairs[,2]-(1:KK)))!=0) {
-    print(Test$pairs[,2]);Hungarian=T
-  }else{
-    Hungarian=F
-  }
-  Lam_1_0C<- Lam_1_0[Test$pairs[,2],]
- 
-
+  
   
   if( isBifactor){
     Lam_1_0<-rbind(rep(0,K),Lam_1_0C)
     for(ii in 1:ncol(Lam_1_0)){
       
-      Lam_1_0[Q_H[ii,]!=0,ii]<- sum(Lam_1_0[,ii])/length(Q_H[ii,]!=0)
+      Lam_1_0[Q_H[ii,]!=0,ii]<- sum(Lam_1_0C[,ii])/length(Q_H[ii,]!=0)
       Lam_1_0[Q_H[ii,]==0,ii]<- 0
     }
   }else{
     Lam_1_0<- Lam_1_0C
   }
- 
   
   
   
   
   
-  return(list(Lam_1= Lam_1_0,Lam_0= Lam_0_0,  DATA_ALPHA=  DATA_ALPHA))
+  
+  
+  
+  return(list(Lam_1= Lam_1_0,Lam_0= Lam_0_0,  DATA_ALPHA=  DATA_ALPHA,  Beta1_Mat0= Beta1_Mat0))
   
   
 }

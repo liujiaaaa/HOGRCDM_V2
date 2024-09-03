@@ -1,6 +1,6 @@
 
-FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
-                                   ModelSetList, Q_H, RegurlPara
+FIT_CC_LLM<-function(Res, SizeList, InitAll, SettingList,
+                           ModelSetList, Q_H, RegurlPara
 ){
   
   time_start<-proc.time() 
@@ -59,7 +59,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   
   ######################## 
-  lRes<-log(Res)
+  #lRes<-log(Res)
   ######################## 
   
   N<-SizeList$N
@@ -95,6 +95,21 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   
   
+  if(SettingList$PRINT==T){
+    PRINT=T
+    
+    if(is.null(SettingList$PR_ITER_NUM)){
+      PR_ITER_NUM=5
+    } else{
+      PR_ITER_NUM=SettingList$PR_ITER_NUM
+    }
+    
+  } else{
+    PRINT=F
+  }
+  
+  
+  
   ###########################Testing
   # Slope_B<-Com_par$Slope_B
   # Interc_B<-Com_par$Interc_B
@@ -120,7 +135,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
     Data_Res<-matrix(NA,N*L,J)
     for(l in 1:L){
-      Data_Res[ ((0:(N-1))*L)+l,]<-lRes
+      Data_Res[ ((0:(N-1))*L)+l,]<-Res
     }
     
     
@@ -150,7 +165,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
                       Ori_Attri= Poss_Attr1_Aug)
     ############################################################
     
-    Data_Res<-DataSet_Create(num_ob=N,num_attri=K,num_item=J,OriData=lRes)
+    Data_Res<-DataSet_Create(num_ob=N,num_attri=K,num_item=J,OriData=Res)
     
     Poss_AttrUp<- Poss_Attr1_Aug
     
@@ -192,7 +207,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
                       Ori_Attri= Poss_Attr1_Aug)
     ############################################################
     
-    Data_Res<-DataSet_Create(num_ob=N,num_attri=K,num_item=J,OriData=lRes)
+    Data_Res<-DataSet_Create(num_ob=N,num_attri=K,num_item=J,OriData=Res)
     
     Poss_AttrUp<- Poss_Attr1_Aug
     
@@ -202,7 +217,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   
   
-
+  
   
   
   
@@ -221,12 +236,12 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     index[[k]]<- which(Q_H[k,]==1)
   }
   
-
+  
   #Data_x<-Poss_Attr
   #for(su in 2:N){
   #  Data_x<-rbind(Data_x,Poss_Attr)
   #}
- 
+  
   
   
   
@@ -265,7 +280,8 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   # }
   # ResAN<-1-ResA
   
-  lResM<-lRes[rep(1:nrow(Res),L),]
+  ResM<-Res[rep(1:nrow(Res),L),]
+  ResMN<-1-ResM
   rLN<-rep(1:L,each=N)
   #repmat(t(Res), 1,L)
   #replicate(L,t(Res))
@@ -310,15 +326,18 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   while((passing<Passing & i<maxIter)){
     
+    if((PRINT&i%%PR_ITER_NUM==0)){
+      print(Slope_B)###This can be revised to print more information
+      print(Interc_B)
+      print( Slope_H)
+      print( Interc_H)
+      print(Sigma_theta)
+      print(ta)
+    }
     
-    # if(i%%10==0){
-    #      print(Interc_B)
-    print(Slope_B)
-    print( Slope_H)
-    print( Interc_H)
-    print(Sigma_theta)
-    print(ta)
-    # }
+    
+    
+    
     
     
     
@@ -382,21 +401,12 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     #  AB[AB<0]<- 0
     ##########################
     
-    sdd<-rep(ta,each=N*L)
-    PRT1[,]<-dnorm(as.vector(lResM),as.vector(AB[rLN,]),sd= sdd)
+    PR1<-plogis(Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix)
     
-    
-    # PR2<-1-PR1
-    #  PR1A[,,]<-PR1
-    #  PR2A[,,]<-PR2
-    # PRT<-ResA*PR1A+ResAN*PR2A
-    #PRTNJ<-apply(PRT,c(1,3),prod)
-    
-    
-    # PRt1<- PR1[rLN,]
-    # PRt2<-1-PRt1
-    #PRT1<-ResM*PRt1+ResMN*PRt2
-    #PRTNJ<-matrix(rowProds(PRT1),L,N,byrow=T)
+    PRt1<- PR1[rLN,]
+    PRt2<-1-PRt1
+    PRT1<-ResM*PRt1+ResMN*PRt2
+  
     PRTNJL[,]<-rowProds(PRT1)
     PRTNJ<-t(PRTNJL)
     
@@ -423,7 +433,7 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     WEI<-as.vector(PRAA)
     
     PRAV_s<-as.vector(t(PRAA))%*%t(rep(1,J))
-    ta<- sqrt( colSums((lResM-AB[rLN,])^2* PRAV_s)/N)
+   
     
     
     
@@ -431,12 +441,10 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
     
     
-
-    Beta<-sapply(1:J, OptBott_LogNor_Confir, x=Data_x,
-                 Res=Data_Res,Q_mat=Q_Aug,weights=WEI,
-                simplify = T)
-
-
+    Beta<-sapply(1:J, OptBott_Confir, x=Data_x,
+                 Res=Data_Res,Q_mat=Q_Aug,weights=WEI,Family="binomial", Link="logit",
+                 simplify = T)
+   
     Interc_B <- Beta[1,]
     Slope_B <- t(Beta[-1,])
     
@@ -488,8 +496,8 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
     #print(test)
     
-   # result_Lamnda<-rbind(LAMBDA[-1,],LAMBDA[1,])
-  #  Lambda[t(QQc)!=0]<-result_Lamnda
+    # result_Lamnda<-rbind(LAMBDA[-1,],LAMBDA[1,])
+    #  Lambda[t(QQc)!=0]<-result_Lamnda
     #  print( Lambda)
     
     
@@ -582,10 +590,10 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   Slope_B_Pre<-Slope_B
   
- # stopCluster(cl)
+  # stopCluster(cl)
   
   
-
+  
   
   
   
@@ -635,10 +643,14 @@ FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
     AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
     #########################
-    # AB[AB<0]<- 0
+    #  AB[AB<0]<- 0
     ##########################
     
-    PRT1[,]<-dnorm(as.vector(lResM),as.vector(AB[rLN,]),sdd)
+    PR1<-plogis(Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix)
+    
+    PRt1<- PR1[rLN,]
+    PRt2<-1-PRt1
+    PRT1<-ResM*PRt1+ResMN*PRt2
     
     # PR2<-1-PR1
     #  PR1A[,,]<-PR1

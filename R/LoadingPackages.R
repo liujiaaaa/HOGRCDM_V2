@@ -3,7 +3,7 @@ LoadingPackages<-function(){
               "methods","base","cluster","lpSolve","DescTools",
               "mvtnorm", "RcppHungarian","glmnet","Matrix",
               "doParallel", "iterators","foreach",
-              "profvis","emdbook","mvnfast","matrixStats", "clue",
+              "profvis","emdbook","mvnfast","matrixStats", "clue","speedglm",
               "MASS","remotes","future.apply","magrittr", "TruncatedNormal"
   )
   

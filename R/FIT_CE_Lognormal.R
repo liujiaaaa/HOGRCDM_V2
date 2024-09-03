@@ -1,25 +1,25 @@
 
-FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
-                                   ModelSetList, Q_H, RegurlPara
-                                    ){
+FIT_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
+                           ModelSetList, Q_H, RegurlPara,Com_par=NULL
+){
   
- time_start<-proc.time() 
+  time_start<-proc.time() 
   
   
-  Opt_Weight_Higher<-function(j,x,Q_mat,Res,LLambda,Link="identity", weights){
-    data_x<-x[,which(Q_mat[j,]!=0)]
-    fit <- glmnet(x=data_x,Res[,j],  family = binomial(link = Link), weights=weights,
-                  lambda=LLambda[j])
-    as.vector(coef(fit))
-  }
+  # Opt_Weight_Higher<-function(j,x,Q_mat,Res,LLambda,Link="identity", weights){
+  #   data_x<-x[,which(Q_mat[j,]!=0)]
+  #   fit <- glmnet(x=data_x,Res[,j],  family = binomial(link = Link), weights=weights,
+  #                 lambda=LLambda[j])
+  #   as.vector(coef(fit))
+  # }
   
   
   
   
   # E-step to obtain mc_samples of factors for each observation
   sample_single_thetas <- function(m, k, mc_samples, d1, d2, s_arr,Sigma_theta){
-    custom_library_path <- "/burg/home/jl6795/R/x86_64-pc-linux-gnu-library/4.3"
-    library(TruncatedNormal,lib.loc = custom_library_path)
+   # custom_library_path <- "/burg/home/jl6795/R/x86_64-pc-linux-gnu-library/4.3"
+    #library(TruncatedNormal,lib.loc = custom_library_path)
     inv_term <- solve(d1%*%Sigma_theta%*%t(d1)+diag(m))
     cov_vo <- Sigma_theta - Sigma_theta%*%t(d1)%*%inv_term %*% d1%*%Sigma_theta
     cov_v1 <- diag(1/s_arr) %*% (d1%*%Sigma_theta%*%t(d1) + diag(m)) %*% diag(1/s_arr)
@@ -40,9 +40,9 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   sample_thetas <- function(L,K,D,data,Slope_H,Interc_H,Sigma_theta,  mc_samples){
     #source("sample_single_thetas.R")
     # source("/burg/home/jl6795/DINA2/DINA/sample_single_thetas.R")
-    n <- L
-    m <- K
-    k <- D
+    n = L
+    m =K
+    k =D
     library(magrittr)
     
     d1_array <- sweep((rep(1, n) %x% t( Slope_H)), 1, c(t(2*data-1)), "*")
@@ -56,12 +56,12 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
       do.call(rbind, .)
     return(thetas)
   }
-
   
-######################## 
+  
+  ######################## 
   lRes<-log(Res)
-######################## 
- 
+  ######################## 
+  
   N<-SizeList$N
   J<-SizeList$J
   K<-SizeList$K
@@ -75,7 +75,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   ModelStruc_Bottom=SettingList$ModelStruc_Bottom
   isBifactor=ModelSetList$ModelStruc_Higher=="Bifactor"
   maxIter=SettingList$maxIter
-  ReturnLikelihood=SettingList$maxIter
+  ReturnLikelihood=SettingList$ReturnLikelihood
   epsCheck=SettingList$epsCheck
   Passing=SettingList$Passing
   ModelStruc_Bottom=ModelSetList$ModelStruc_Bottom
@@ -85,7 +85,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   
   
-#########Initilization
+  #########Initilization
   Slope_H<-InitAll$Slope_H_INI
   Interc_H<-InitAll$Interc_H_INI  
   Interc_B<-InitAll$Interc_B_INI 
@@ -93,112 +93,67 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   Sigma_theta<-InitAll$Sigma_theta_INI
   ta<-InitAll$SD#initial values for sd
   
-
- 
   
-  if(ModelStruc_Bottom=="All_effect"|ModelStruc_Bottom=="DINA"){
-  if(ModelStruc_Bottom=="All_effect"){
-    Q_Aug<-Q
-    q_num1<-K
-    for(kk in 2:K){
-      combinations <- t(combn(1:K, kk))
-      te<-apply( Q,1,FUN= comFUN, combinations)
-      # print(dim(as.matrix(te)))
-      # print(choose(K1,kk))
-      if(kk<K) te<-t(te)
-      Q_Aug<-cbind(Q_Aug,te)
-      q_num1<-q_num1+choose(K,kk)
+  
+  if(SettingList$PRINT==T){
+    PRINT=T
+    
+    if(is.null(SettingList$PR_ITER_NUM)){
+      PR_ITER_NUM=5
+    } else{
+      PR_ITER_NUM=SettingList$PR_ITER_NUM
     }
     
-  }else if (ModelStruc_Bottom=="DINA"){
-    Q_Aug<-Q
-    q_num1<-K
-    for(kk in 2:K){
-      combinations <- t(combn(1:K, kk))
-      te<-apply( Q,1,FUN= comFUN, combinations)
-      # print(dim(as.matrix(te)))
-      # print(choose(K1,kk))
-      if(kk<K){
-        te<-t(te)
-        DINA_INDEX<-  (1-as.numeric(rowSums(te)>0))*DINA_INDEX+kk*as.numeric(rowSums(te)>0)
-        
-        
-        
-      }else if(kk==K){
-        DINA_INDEX<-  (1-as.numeric((te)>0))*DINA_INDEX+kk*as.numeric((te)>0)
-      }
-      indd<-which(DINA_INDEX==kk)
-      if(length(indd)>0)  Q_Aug[indd,]<-0
-      Q_Aug<-cbind(Q_Aug,te)
-      q_num1<-q_num1+choose(K,kk)
-      
-      
-    }
-  }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    InitListUpdate<-list()
-    InitListUpdate$Slope_B<-matrix(0,nrow(Q_Aug),ncol(Q_Aug))
-    InitListUpdate$Slope_B[,1:K]<- Slope_B
-    InitListUpdate$Interc_B<- Interc_B
-    
-    
-    Interc_B<-InitListUpdate$Interc_B
-    Slope_B<-InitListUpdate$Slope_B
+  } else{
+    PRINT=F
   }
   
- 
- 
- 
- 
-
-  
- 
   
   
-  #Slope_H<-Slope_HT
-  #Interc_H<-Interc_HT
-  # Slope_B<-Beta1_MatT
-  #Interc_B<-Beta0T
-  
-  index<-list()
-  for(k in 1:K){
-    index[[k]]<- which(Q_H[k,]==1)
-  }
+  ###########################Testing
+  # Slope_B<-Com_par$Slope_B
+  # Interc_B<-Com_par$Interc_B
+  # Slope_H<-Com_par$Slope_H
+  # Interc_H<-Com_par$Interc_H
   
   #L<-2^K
-  Poss_Attr<-matrix(NA,L,K)
-  for(l in 1:K){
-    repTimes<-2^(l-1)
-    Poss_Attr[,l]<-rep(c(rep(1,L/2^l),rep(0,L/2^l)),repTimes)
-  }
+  Poss_Attr<-PossATTRIB(K)
   
   NPoss_Attr<-1-Poss_Attr
   
-  #Data_x<-Poss_Attr
-  #for(su in 2:N){
-  #  Data_x<-rbind(Data_x,Poss_Attr)
-  #}
+  
+  
+  
   if(ModelStruc_Bottom=="Main_effect"){
+   # Q_Aug<-Q_B
+    
+    Poss_AttrUp<- Poss_Attr
+    
     Data_x1<- matrix(NA,K,L*N)
-    Data_x1[,]<-t(Poss_Attr)
+    Data_x1[,]<-t(Poss_AttrUp)
     Data_x<-t(Data_x1)
     
     Data_Res<-matrix(NA,N*L,J)
     for(l in 1:L){
       Data_Res[ ((0:(N-1))*L)+l,]<-lRes
     }
-    Poss_AttrUp<- Poss_Attr
     
-  }else if(ModelStruc_Bottom=="All_effect"|ModelStruc_Bottom=="DINA"){
+    
+    
+  }else  if(ModelStruc_Bottom=="All_effect"){
+    # Q_Aug<-Q_B
+    # q_num1<-K
+    # for(kk in 2:K){
+    #   combinations <- t(combn(1:K, kk))
+    #   te<-apply( Q_B,1,FUN= comFUN, combinations)
+    #   # print(dim(as.matrix(te)))
+    #   # print(choose(K1,kk))
+    #   if(kk<K) te<-t(te)
+    #   Q_Aug<-cbind(Q_Aug,te)
+    #   q_num1<-q_num1+choose(K,kk)
+    # }
+    
+    
     Poss_Attr1<-PossATTRIB(K)
     ####################################################
     PS<-AugmenInteraction(OrigriData=Poss_Attr1,K=K)
@@ -213,23 +168,88 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     Data_Res<-DataSet_Create(num_ob=N,num_attri=K,num_item=J,OriData=lRes)
     
     Poss_AttrUp<- Poss_Attr1_Aug
+    
+    
+  }else if (ModelStruc_Bottom=="DINA"){
+    
+    # DINA_INDEX<-rep(1,J)
+    # Q_Aug<-Q_B
+    # q_num1<-K
+    # for(kk in 2:K){
+    #   combinations <- t(combn(1:K, kk))
+    #   te<-apply( Q_B,1,FUN= comFUN, combinations)
+    #   # print(dim(as.matrix(te)))
+    #   # print(choose(K1,kk))
+    #   if(kk<K){
+    #     te<-t(te)
+    #     DINA_INDEX<-  (1-as.numeric(rowSums(te)>0))*DINA_INDEX+kk*as.numeric(rowSums(te)>0)
+    #     
+    #     
+    #     
+    #   }else if(kk==K){
+    #     DINA_INDEX<-  (1-as.numeric((te)>0))*DINA_INDEX+kk*as.numeric((te)>0)
+    #   }
+    #   indd<-which(DINA_INDEX==kk)
+    #   if(length(indd)>0)  Q_Aug[indd,]<-0
+    #   Q_Aug<-cbind(Q_Aug,te)
+    #   q_num1<-q_num1+choose(K,kk)
+    # }
+    
+    
+    Poss_Attr1<-PossATTRIB(K)
+    ####################################################
+    PS<-AugmenInteraction(OrigriData=Poss_Attr1,K=K)
+    Poss_Attr1_Aug<-PS$OrigriData_Aug
+    s_num1<-PS$s_num
+    
+    
+    Data_x<-Data_Pred(num_ob=N,num_attri= K,num_attri_aug= s_num1,
+                      Ori_Attri= Poss_Attr1_Aug)
+    ############################################################
+    
+    Data_Res<-DataSet_Create(num_ob=N,num_attri=K,num_item=J,OriData=lRes)
+    
+    Poss_AttrUp<- Poss_Attr1_Aug
+    
+    
   }
   
   
   
-  #Data_Res<-matrix(NA,N*2^K,J)
-  #for(su in 1:N){
-  #  Data_Res[((su-1)*L+1):(su*L),]<-rep(1,L)%*%t(as.vector(Res[su,]))
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #Slope_H<-Slope_HT
+  #Interc_H<-Interc_HT
+  # Slope_B<-Beta1_MatT
+  #Interc_B<-Beta0T
+  
+  index<-list()
+  for(k in 1:K){
+    index[[k]]<- which(Q_H[k,]==1)
+  }
+  
+  
+  #Data_x<-Poss_Attr
+  #for(su in 2:N){
+  #  Data_x<-rbind(Data_x,Poss_Attr)
   #}
   
   
   
   
-  Lambda<-rbind(Slope_H,Interc_H)
-  Lambda[-(D+1),][t(Q_H)==0]<-0
+  LAMBDA<-rbind(Interc_H,Slope_H)
+  LAMBDA[-1,][t(Q_H)==0]<-0
   QQc<-cbind(Q_H,rep(1,K))
   
- 
+  
   
   
   T7<-0
@@ -241,7 +261,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   IA<-(-1)^NPoss_Attr
   
- 
+  
   ST<-array(NA,dim=c(K,K,L))
   
   IAd<-matrix(NA,L,K)
@@ -249,7 +269,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   PA<-rep(NA,L)
   LOW<-rep(-Inf,K)
   MEAN<-rep(0,K)
- Interc_B_matrix<-matrix(NA,L,J)
+  Interc_B_matrix<-matrix(NA,L,J)
   PRA<-array(NA,dim=c(L,J,N))
   PR1A<-PR2A<-array(NA,dim=c(L,J,N))
   ResA<-array(NA,dim=c(L,J,N))
@@ -273,6 +293,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   
   I1L<-rep(1,L)
   I1N<-rep(1,N)
+  
   PRTNJL<-matrix(NA,N,L)
   
   
@@ -294,28 +315,32 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
   ##############The first Pre_period iterations,  do not specify warm start for 
   ##############optimization
   
-  cl <- makeCluster(detectCores() - 1)  # Reserve one core for system processes
-  registerDoParallel(cl)
-
+  # cl <- makeCluster(detectCores() - 1)  # Reserve one core for system processes
+  # registerDoParallel(cl)
+  # 
   
   Beta<-rbind(Interc_B,t(Slope_B) )
+  
   passing=0
   
   while((passing<Passing & i<maxIter)){
     
-    
-    # if(i%%10==0){
-    #      print(Interc_B)
-    print(Slope_B)
-    print( Slope_H)
-    print( Interc_H)
-    print(Sigma_theta)
-    print(ta)
-    # }
-    
+    if((PRINT&i%%PR_ITER_NUM==0)){
+      print(Slope_B)###This can be revised to print more information
+      print(Interc_B)
+      print( Slope_H)
+      print( Interc_H)
+      print(Sigma_theta)
+      print(ta)
+    }
     
     
-    Pre_Lambda<-Lambda
+    
+    
+    
+    
+    
+    Pre_LAMBDA<-LAMBDA
     Pre_Sigma_theta<-Sigma_theta
     Pre_Beta<-  Beta
     
@@ -367,7 +392,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     PAM[,]<-PA%*%t(I1N)
     
     
-   Interc_B_matrix[,]<-I1L%*%t(Interc_B)
+    Interc_B_matrix[,]<-I1L%*%t(Interc_B)
     t_Beta1_Mat<-t(Slope_B)
     
     AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
@@ -424,20 +449,24 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
     
     
+   
+    
+    
+    
+    ###LLambda is a J-dimnesional vector including regurlarization parameters
+    ###for J items.
     
     Beta<-sapply(1:J,Opt_WeightFast, x=Data_x, 
                  Res=Data_Res,weights=WEI, 
                  LLambda=RegurlPara, simplify = T)
     
-    
-    
-   Interc_B <- Beta[1,]
-   Slope_B <- t(Beta[-1,])
-    
-    
-    
+    Interc_B <- Beta[1,]
+    Slope_B <- t(Beta[-1,])
     colnames(Interc_B)<-NULL
     rownames(Slope_B)<-colnames( Slope_B)<-NULL
+    
+    
+    
     
     
     
@@ -461,6 +490,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     wwe<-rep(ppA,each=IncreSize)   
     
     wee1<- rep(PRAV,each=IncreSize)  
+    
     thetas2<- thetas1*(wee1%*%t(rep(1,D)))
     
     
@@ -475,19 +505,19 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     LAMBDA<-sapply(1:K,    Opt_Weight_Higher_Simpler,Q_mat=Q_H,
                    x=thetaD,
                    Res=xxD,weights= wwe, Link="probit",
-                   LLambda=rep(0,K), simplify = T)
+                   simplify = T)
     
     
     
     #print(test)
     
-    result_Lamnda<-rbind(LAMBDA[-1,],LAMBDA[1,])
-    Lambda[t(QQc)!=0]<-result_Lamnda
+    # result_Lamnda<-rbind(LAMBDA[-1,],LAMBDA[1,])
+    #  Lambda[t(QQc)!=0]<-result_Lamnda
     #  print( Lambda)
     
     
-    Slope_H<-Lambda[-(D+1),]
-    Interc_H<-Lambda[(D+1),]  
+    Slope_H<-LAMBDA[-1,]
+    Interc_H<-LAMBDA[1,]  
     
     # Sigma_theta<-(theta_At)%*%t(theta_At)/(L*IncreSize)
     Sigma_theta<-t(thetas2)%*%thetas2/(IncreSize*N)
@@ -498,22 +528,22 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
       Zrs<-tanh(Sigma_theta1)
       diag(Zrs)<-0
       Zrs[lower.tri(Zrs)]<-0
-
+      
       UU<-matrix(NA,D1,D1)
       UU[lower.tri(UU)]<-0
       UU[1,1]<-1
       UU[1,-1]<-Zrs[1,-1]
-
+      
       for(r in 2:D1){
         for(s in r:D1){
-
+          
           if(r==s){
             UU[r,s]<-prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
           } else{
             UU[r,s]<- Zrs[r,s]* prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
           }
-
-
+          
+          
         }
       }
       Sigma_theta[-1,-1]<-t(UU)%*%UU
@@ -562,7 +592,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     #Slope_H[,1:D]<-Slope_HT[,1:D]
     
     
-    eps<-max(abs( Pre_Sigma_theta- Sigma_theta),abs( Pre_Lambda-Lambda),
+    eps<-max(abs( Pre_Sigma_theta- Sigma_theta),abs( Pre_LAMBDA-LAMBDA),
              abs( Pre_Beta- Beta))
     
     if(eps<epsCheck) passing=passing+1
@@ -573,50 +603,12 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     
   }
   
- Slope_B_Pre<-Slope_B
+  Slope_B_Pre<-Slope_B
   
-  stopCluster(cl)
+  # stopCluster(cl)
   
   
-  KK=ncol(Com_par$Slope_B)
-  DD<-nrow(Com_par$Slope_H)
-  if(!is.null(Com_par)){
-    
-    Cost_matrix<-matrix(NA,KK,KK)
-    for(ll in 1:KK){
-      for(mm in 1:KK){
-        Cost_matrix[ll,mm]<-sum(abs( Slope_B[,mm]-Com_par$Slope_B[,ll]))
-      } 
-    }
-    Test<-HungarianSolver(Cost_matrix) 
-    if(sum(abs(Test$pairs[,2]-(1:KK)))!=0) {
-      print(Test$pairs[,2]);Hungarian=T
-    }else{
-      Hungarian=F
-    }
-   Slope_B<- Slope_B[, Test$pairs[,2]]
-    # Slope_H<-Slope_H[,Test$pairs[,2]]
-    # Interc_H<-Interc_H[Test$pairs[,2]]
-    # 
-    # 
-    # Cost_matrixH<-matrix(NA,DD,DD)
-    # for(ll in 1:DD){
-    #   for(mm in 1:DD){
-    #     Cost_matrixH[ll,mm]<-sum(abs(Slope_H[mm,]-Com_par$Slope_HT[ll,]))
-    #   }
-    # }
-    # 
-    # TestH<-HungarianSolver(Cost_matrixH)
-    # if(sum(abs(TestH$pairs[,2]-(1:DD)))!=0) {
-    #   print(TestH$pairs[,2]);Hungarian=T
-    # }else{
-    #   Hungarian=F
-    # }
-    # Slope_H<-Slope_H[TestH$pairs[,2],]
-    
-    
-    
-  }
+  
   
   
   
@@ -661,7 +653,7 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     PAM[,]<-PA%*%t(I1N)
     
     
-   Interc_B_matrix[,]<-I1L%*%t(Interc_B)
+    Interc_B_matrix[,]<-I1L%*%t(Interc_B)
     t_Beta1_Mat<-t(Slope_B)
     
     AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
@@ -696,11 +688,42 @@ FIT_HOGRCDM_CE_Lognormal<-function(Res, SizeList, InitAll, SettingList,
     LIKELI<-NULL
   }
   
+  
+  
+  
+  
+  
+  if(!is.null(Com_par)){
+    KK=ncol(Com_par$Slope_B)
+    DD<-nrow(Com_par$Interc_B)
+    Cost_matrix<-matrix(NA,KK,KK)
+    for(ll in 1:KK){
+      for(mm in 1:KK){
+        Cost_matrix[ll,mm]<-sum(abs(Slope_B[,mm]-Com_par$Slope_B[,ll]))
+      } 
+    }
+    Test<-HungarianSolver(Cost_matrix) 
+    if(sum(abs(Test$pairs[,2]-(1:KK)))!=0) {
+      print(Test$pairs[,2]);Hungarian=T
+    }else{
+      Hungarian=F
+    }
+    Slope_B<-Slope_B[, Test$pairs[,2]]
+    
+    
+    
+  }
+  
+  
+  
+  
+  
+  
   time_end<-proc.time()-time_start
   return(list(Slope_H=Slope_H,Interc_H=Interc_H,Sigma_theta=Sigma_theta,
-             Interc_B=Interc_B,Slope_B=Slope_B,
-             Slope_B_Pre=Slope_B_Pre, Pairs=Test$pairs,PRAA=PRAA,
-              Hungarian=Hungarian,time_end=time_end,i=i,LIKELI=LIKELI,SD= ta))
+              Interc_B=Interc_B,Slope_B=Slope_B,
+              Slope_B_Pre=Slope_B_Pre,PRAA=PRAA,
+              time_end=time_end,i=i,LIKELI=LIKELI,SD= ta))
   
   
 }

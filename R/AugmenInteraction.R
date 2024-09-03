@@ -1,16 +1,17 @@
 
 #' Augmentation
 #'
-#' Expanding the original binary latent attribute matrix to a matrix including 
-#' all the interaction terms, which is required for "All_effect" and "DINA" cases
+#' Expands the original binary latent attribute matrix to include all interaction 
+#' terms, which is required for the "All_effect" and "DINA" cases.
 #' 
-#' @param OrigriData An original binary attribute matrix with K columns
-#' @return The augmented matrix  'OrigriData_Aug' and the number of columns of 
-#' OrigriData_Aug, 's_num'
+#' @param OrigriData An original binary attribute matrix with K columns.
+#' @return A list containing the augmented matrix 'OrigriData_Aug' and the number 
+#' of columns in 'OrigriData_Aug', 's_num'.
 #' @examples 
-#' A_test<-matrix(c(1,1,1,0,0,1,0,0),ncol=2,byrow=T)
-#' A_test_Aug <- AugmenInteraction(A_test,2);
+#' A_test <- matrix(c(1,1,1,0,0,1,0,0), ncol=2, byrow=TRUE)
+#' A_test_Aug <- AugmenInteraction(A_test, 2)
 #' @export
+
 
 
 
