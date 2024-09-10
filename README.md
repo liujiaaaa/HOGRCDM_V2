@@ -13,7 +13,7 @@ This project includes the code for Algorithm 1 in Section 4 of the paper. While 
 
 ---Project Structure
 
---This folder contains all the necessary functions required to implement the algorithm.
+--R Folder: This folder contains all the necessary functions required to implement the algorithm.
 
 --man Folder: This folder is intended for the help files of the main functions in folder "R". It is currently empty but will be populated soon.
 
