@@ -361,14 +361,17 @@ paper. While the paper focuses on an exploratory scenario, we have
 extended the project to support confirmatory settings as well, allowing
 users to flexibly choose between these two settings based on their
 specific needs.</p>
-<p>Project Structure -man Folder: This folder is intended for the help
-files of the main functions. It is currently empty but will be populated
+<p>—Project Structure</p>
+<p>–This folder contains all the necessary functions required to
+implement the algorithm.</p>
+<p>–man Folder: This folder is intended for the help files of the main
+functions in folder “R”. It is currently empty but will be populated
 soon.</p>
-<p>-LoadValue Folder: This folder contains the true parameters and other
+<p>–LoadValue Folder: This folder contains the true parameters and other
 values that may be used when running the trial examples.</p>
-<p>-MyExample Folder: This folder includes example scripts for running
+<p>–MyExample Folder: This folder includes example scripts for running
 the algorithm in both confirmatory and exploratory cases.</p>
-<p>Script Naming Conventions:</p>
+<p>–Script Naming Conventions:</p>
 <p>-The R scripts with “CC” in the filename are for confirmatory
 cases.</p>
 <p>-The scripts with “CE” in the filename are for exploratory cases (as
@@ -376,25 +379,25 @@ discussed in the paper).</p>
 <p>-All measurement model types and distributions are supported by this
 project, and all scripts have been successfully tested on the owner’s
 computer.</p>
-<p>Main Functions The primary functions used in the project are located
+<p>—Main Functions The primary functions used in the project are located
 in the R folder. Since detailed help files will be added to the man
 folder soon, a brief overview of the main functions is provided
 below:</p>
-<p>-LoadingPackages: This function installs and loads all the required R
+<p>–LoadingPackages: This function installs and loads all the required R
 packages.</p>
-<p>-GenerateData: This function generates data for simulations.</p>
-<p>-INI_HOGRCDM_Main: This function initializes the model.</p>
-<p>-Files with “FIT”: These are the main functions for running the
+<p>–GenerateData: This function generates data for simulations.</p>
+<p>–INI_HOGRCDM_Main: This function initializes the model.</p>
+<p>–Files with “FIT”: These are the main functions for running the
 algorithms. They are named using the format:</p>
 <p>“FIT” + “setting (exploratory/confirmatory)” + “distribution”</p>
-<p>–To fit a model with data following a log-normal distribution in a
+<p>-To fit a model with data following a log-normal distribution in a
 confirmatory setting, use the function FIT_CC_Lognormal.</p>
-<p>–To fit a model with data following a log-normal distribution in an
+<p>-To fit a model with data following a log-normal distribution in an
 exploratory setting (as considered in the paper), use
 FIT_CE_Lognormal.</p>
-<p>–FIT_CC_Poisson is for count data following a Poisson
+<p>-FIT_CC_Poisson is for count data following a Poisson
 distribution.</p>
-<p>–FIT_CC_LLM is for binary data following a Bernoulli
+<p>-FIT_CC_LLM is for binary data following a Bernoulli
 distribution.</p>
 
 
