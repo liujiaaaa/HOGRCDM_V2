@@ -128,7 +128,7 @@ GenerateData<-function(SizeList,ModelSetList,TrueP_List_Bott,TrueP_List_High,Q_B
       Pro_Response[,j]<-rep(TrueP_List_Bott$Interc_B[j],N)+
         rowSums((rep(1,N)%*%t(TrueP_List_Bott$Slope_B[j,][Q_Aug[j,]!=0]))*as.matrix(Alpha_J[[j]]))
     }
-    ShapeM<-rep(1,N)%*%t(TrueP_List_High$Shape)
+    ShapeM<-rep(1,N)%*%t(TrueP_List_Bott$Shape)
     Res1<- rgamma(N*J, shape=  ShapeM, rate = as.vector(Pro_Response))
     Res<-matrix( Res1,N,J)
     

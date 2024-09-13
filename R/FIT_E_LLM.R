@@ -1,5 +1,5 @@
 
-FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
+FIT_E_LLM<-function(Res, SizeList, InitAll, SettingList,
                      ModelSetList, Q_H, RegurlPara, Com_par=NULL
 ){
   
@@ -88,12 +88,16 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   #########Initilization
-  Slope_H<-InitAll$Slope_H_INI
-  Interc_H<-InitAll$Interc_H_INI  
+  # Slope_H<-InitAll$Slope_H_INI
+  # Interc_H<-InitAll$Interc_H_INI  
   Interc_B<-InitAll$Interc_B_INI 
   Slope_B<-InitAll$Slope_B_INI
-  Sigma_theta<-InitAll$Sigma_theta_INI
+  # Sigma_theta<-InitAll$Sigma_theta_INI
   ta<-InitAll$SD#initial values for sd
+  
+  PLL<-InitAll$PLL
+  
+  if(is.null(PLL)) PLL<-rep(1/L,L)
   
   
   
@@ -127,7 +131,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   if(ModelStruc_Bottom=="Main_effect"){
-  #  Q_Aug<-Q_B
+    #  Q_Aug<-Q_B
     
     Poss_AttrUp<- Poss_Attr
     
@@ -224,7 +228,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   
-#  DATA_INDEX_LIST<-lapply(1:J,FindList,data_y=Data_Res, data_x=Data_x,Q_Bm=Q_B)
+  #  DATA_INDEX_LIST<-lapply(1:J,FindList,data_y=Data_Res, data_x=Data_x,Q_Bm=Q_B)
   
   
   
@@ -332,9 +336,9 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     if((PRINT&i%%PR_ITER_NUM==0)){
       print(Slope_B)###This can be revised to print more information
       print(Interc_B)
-      print( Slope_H)
-      print( Interc_H)
-      print(Sigma_theta)
+      # print( Slope_H)
+      # print( Interc_H)
+      # print(Sigma_theta)
       # print(ta)
     }
     
@@ -346,59 +350,13 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     # print(ta)
     
     
-   # print(eps)
+    # print(eps)
     
     
-    Pre_LAMBDA<-LAMBDA
-    Pre_Sigma_theta<-Sigma_theta
+  
     Pre_Beta<-  Beta
     
-    AS<-t(Slope_H)%*%Sigma_theta%*%Slope_H
-    
-    SdAS<-sqrt(1+diag(AS))
-    SdASM[,]<-I1L%*%t(SdAS)
-    TsAS<-SdAS%*%t(SdAS)
-    # TsASA[,,]<-TsAS
-    
-    AT<-AS/TsAS
-    diag( AT)<-1 #cor of diagonal equal to 1
-    
-    ST[,,]<- AT
-    #SA is covariance matrix
-    SA<-IA2*ST
-    
-    #TsASA[,,]<-TsAS
-    # ASA[,,]<-AS
-    # SA<-(ASA*IA2)/TsASA
-    
-    #for(l in 1:L){
-    #  diag(SA[,,l])<-1
-    #}
-    
-    IAd<-IA*(I1L%*%t(Interc_H))
-    Fq<-IAd/SdASM
-    
-    # for(l in 1:L){
-    #   PA[l]<- mvtnorm::pmvnorm(lower=LOW,upper=Fq[l,],mean=MEAN,corr=SA[,,l])
-    # }
-    
-    
-    
-    PA<-apply(matrix(1:L),1,FUN=PACDF,LOW=LOW,upperMat=Fq,corrArr=SA)  
-    
-    ###################################################  
-    if(i<NumOfWeight)  PA<-PA*1/2+rep(1/L,L)*1/2
-    ###################################################  
-    
-    
-    
-    #  PA <- foreach(l = 1:L, .combine = "c") %dopar% {
-    #   library(mvtnorm)
-    #   pmvnorm(lower = LOW, upper = Fq[l,], mean = MEAN, corr = SA[,,l])
-    # }
-    
-    
-    PAM[,]<-PA%*%t(I1N)
+   
     
     
     Interc_B_matrix[,]<-I1L%*%t(Interc_B)
@@ -421,7 +379,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     
     
     
-    NUM<-PRTNJ*PAM
+    NUM<-PRTNJ*PLL
     
     DEM<-colSums(NUM)
     DEMM<-rep(1,L)%*%t(DEM)
@@ -443,7 +401,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     PRAV_s<-as.vector(t(PRAA))%*%t(rep(1,J))
     
     
-  
+    PLL<- ppA/N
     
     
     Beta<-sapply(1:J,Opt_WeightFast, x=Data_x, 
@@ -454,134 +412,11 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     Slope_B <- t(Beta[-1,])
     colnames(Interc_B)<-NULL
     rownames(Slope_B)<-colnames( Slope_B)<-NULL
+
     
+ 
     
-    
-    
-    
-    
-    thetas1<- sample_thetas(L,K,D,data=Poss_Attr,Slope_H,Interc_H,
-                            Sigma_theta=Sigma_theta,mc_samples=IncreSize)
-    thetaA<-array(NA,dim=c(L,IncreSize,D))
-    for(ll in 1:L){
-      # print((((ll-1)*mc_samples)+1):(ll*mc_samples))
-      thetaA[ll,,]<-thetas1[(((ll-1)*IncreSize)+1):(ll*IncreSize),]
-    }
-    thetaA1<-aperm( thetaA,c(3,2,1))
-    
-    
-    theta_At<-matrix(NA,D,L*IncreSize)
-    theta_At[,]<-thetaA1
-    thetaD<-t(theta_At[,])
-    
-    xxD<-Poss_Attr[rep(1:L,each=IncreSize),]
-    
-    wwe<-rep(ppA,each=IncreSize)   
-    
-    wee1<- rep(PRAV,each=IncreSize)  
-    
-    thetas2<- thetas1*(wee1%*%t(rep(1,D)))
-    
-    
-    
-    
-    
-    # LAMBDA<-sapply(1:K,  Opt_Weight_Higher,Q_mat=Q_H,
-    #                x=thetaD,
-    #                Res=xxD,weights= wwe, Link="probit",
-    #                LLambda=rep(0,K), simplify = T)
-    
-    LAMBDA<-sapply(1:K,    Opt_Weight_Higher_Simpler,Q_mat=Q_H,
-                   x=thetaD,
-                   Res=xxD,weights= wwe, Link="probit",
-                   simplify = T)
-    
-    
-    
-    #print(test)
-    
-    # result_Lamnda<-rbind(LAMBDA[-1,],LAMBDA[1,])
-    #  Lambda[t(QQc)!=0]<-result_Lamnda
-    #  print( Lambda)
-    
-    
-    Slope_H<-LAMBDA[-1,]
-    Interc_H<-LAMBDA[1,]  
-    
-    # Sigma_theta<-(theta_At)%*%t(theta_At)/(L*IncreSize)
-    Sigma_theta<-t(thetas2)%*%thetas2/(IncreSize*N)
-    
-    if(isBifactor){
-      Sigma_theta1<-Sigma_theta[-1,-1]
-      D1<-D-1
-      Zrs<-tanh(Sigma_theta1)
-      diag(Zrs)<-0
-      Zrs[lower.tri(Zrs)]<-0
-      
-      UU<-matrix(NA,D1,D1)
-      UU[lower.tri(UU)]<-0
-      UU[1,1]<-1
-      UU[1,-1]<-Zrs[1,-1]
-      
-      for(r in 2:D1){
-        for(s in r:D1){
-          
-          if(r==s){
-            UU[r,s]<-prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
-          } else{
-            UU[r,s]<- Zrs[r,s]* prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
-          }
-          
-          
-        }
-      }
-      Sigma_theta[-1,-1]<-t(UU)%*%UU
-      Sigma_theta[1,-1]<-0
-      Sigma_theta[-1,1]<-0
-      Sigma_theta[1,1]<-1
-      
-      # Sigma_theta[-1,-1]<-cov2cor(Sigma_theta[-1,-1])
-      # Sigma_theta[1,-1]<-0
-      # Sigma_theta[-1,1]<-0
-      # Sigma_theta[1,1]<-1
-    }else
-    {
-      
-      #################STAN 1
-      Sigma_theta1<-Sigma_theta
-      D1<-D
-      Zrs<-tanh(Sigma_theta1)
-      diag(Zrs)<-0
-      Zrs[lower.tri(Zrs)]<-0
-      
-      UU<-matrix(NA,D1,D1)
-      UU[lower.tri(UU)]<-0
-      UU[1,1]<-1
-      UU[1,-1]<-Zrs[1,-1]
-      
-      for(r in 2:D1){
-        for(s in r:D1){
-          
-          if(r==s){
-            UU[r,s]<-prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
-          } else{
-            UU[r,s]<- Zrs[r,s]* prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
-          }
-          
-          
-        }
-      }
-      
-      Sigma_theta<-t(UU)%*%UU
-      
-      # Sigma_theta<-cov2cor(Sigma_theta)
-    }
-    
-    # Interc_H<- Interc_HT
-    #Slope_H[,1:D]<-Slope_HT[,1:D]
-    
-    
-    eps<-max(abs( Pre_Sigma_theta- Sigma_theta),abs( Pre_LAMBDA-LAMBDA),
+    eps<-max(
              abs( Pre_Beta- Beta))
     
     if(eps<epsCheck) passing=passing+1
@@ -602,43 +437,8 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   if( ReturnLikelihood){
-    AS<-t(Slope_H)%*%Sigma_theta%*%Slope_H
     
-    SdAS<-sqrt(1+diag(AS))
-    SdASM[,]<-I1L%*%t(SdAS)
-    TsAS<-SdAS%*%t(SdAS)
-    # TsASA[,,]<-TsAS
-    
-    AT<-AS/TsAS
-    diag( AT)<-1 #cor of diagonal equal to 1
-    
-    ST[,,]<- AT
-    #SA is covariance matrix
-    SA<-IA2*ST
-    
-    #TsASA[,,]<-TsAS
-    # ASA[,,]<-AS
-    # SA<-(ASA*IA2)/TsASA
-    
-    #for(l in 1:L){
-    #  diag(SA[,,l])<-1
-    #}
-    
-    IAd<-IA*(I1L%*%t(Interc_H))
-    Fq<-IAd/SdASM
-    
-    # for(l in 1:L){
-    #   PA[l]<- 
-    #     mvtnorm::pmvnorm(lower=LOW,upper=Fq[l,],mean=MEAN,corr=SA[,,l])
-    # }
-    
-    
-    
-    
-    PA<-apply(matrix(1:L),1,FUN=PACDF,LOW=LOW,upperMat=Fq,corrArr=SA)  
-    
-    
-    
+    PA<-PLL
     PAM[,]<-PA%*%t(I1N)
     
     
@@ -699,7 +499,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     }else{
       Hungarian=F
     }
-   Slope_B<-Slope_B[, Test$pairs[,2]]
+    Slope_B<-Slope_B[, Test$pairs[,2]]
     
     
     
@@ -711,10 +511,10 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   time_end<-proc.time()-time_start
-  return(list(Slope_H=Slope_H,Interc_H=Interc_H,Sigma_theta=Sigma_theta,
+  return(list(
               Interc_B=Interc_B,Slope_B=Slope_B,
               Slope_B_Pre=Slope_B_Pre,PRAA=PRAA,
-              time_end=time_end,i=i,LIKELI=LIKELI))
+              time_end=time_end,i=i,LIKELI=LIKELI,PLL=PLL))
   
   
 }

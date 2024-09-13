@@ -262,7 +262,37 @@ if(ModelSetList$ModelDistri_Bottom=="Lognormal"){
       
       
       
+    } else if( (ModelSetList$ModelFrame_Bottom=="Exploratory" & ModelSetList$ModelFrame_Higher=="Confirmatory") ){
+      
+      ########################Initilization for bottom layer
+      INI_B<-INI_CC_Poisson(DATA=Res, N,J,K,scale=1)
+      
+      Slope_B_INI<-INI_B$Init_B_Slope1
+      # Slope_B_INI<- Slope_B_INI[,ordreFct( Slope_B_INI)]
+      Interc_B_INI<-INI_B$Init_B_Intec1
+      # Interc_B_INI[Interc_B_INI<0]<- 0
+      # Slope_B_INI[ Slope_B_INI<0]<-0
+      # Q_B_INI<- Slope_B_INI
+      # Q_B_INI[ Q_B_INI!=0]<-1
+      
+      
+      
+      ########################Initilization for higher order layer   
+      
+      INI_H<-INI_CC_HigherLayer(Res, size_list=SizeList,ModelSetList,
+                                Beta0=Interc_B_INI, Beta1_Mat0=Slope_B_INI,Q_Ht=t(Q_H),Ini_AlphaSize=5000)
+      
+      
+      Slope_H_INI=INI_H$Lam_1 ####May be a target rotation?
+      Interc_H_INI=INI_H$Lam_0
+      #######################
+      Slope_B_INI<- INI_H$Beta1_Mat0
+      #######################
+      
+      
+      
     }
+    
   
   
 
@@ -324,6 +354,36 @@ if(ModelSetList$ModelDistri_Bottom=="Lognormal"){
       
       
       
+      
+      
+    }else if( (ModelSetList$ModelFrame_Bottom=="Exploratory" & ModelSetList$ModelFrame_Higher=="Confirmatory") ){
+      
+      ########################Initilization for bottom layer
+      INI_B<-INI_CC_Gamma(DATA=Res, N,J,K,scale=1)
+      
+      Slope_B_INI<-INI_B$Init_B_Slope1
+      # Slope_B_INI<- Slope_B_INI[,ordreFct( Slope_B_INI)]
+      Interc_B_INI<-INI_B$Init_B_Intec1
+      # Interc_B_INI[Interc_B_INI<0]<- 0
+      # Slope_B_INI[ Slope_B_INI<0]<-0
+      # Q_B_INI<- Slope_B_INI
+      # Q_B_INI[ Q_B_INI!=0]<-1
+      Shape<-INI_B$Shape
+      Rate<-INI_B$Rate
+      
+      
+      ########################Initilization for higher order layer   
+      
+      INI_H<-INI_CC_HigherLayer(Res, size_list=SizeList,ModelSetList,
+                                Beta0=Interc_B_INI, Beta1_Mat0=Slope_B_INI,Q_Ht=t(Q_H),Ini_AlphaSize=5000)
+      
+      
+      Slope_H_INI=INI_H$Lam_1 ####May be a target rotation?
+      Interc_H_INI=INI_H$Lam_0
+      #######################
+      Slope_B_INI<- INI_H$Beta1_Mat0
+      #######################
+     
       
       
     }

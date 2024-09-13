@@ -1,6 +1,6 @@
 
-FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
-                     ModelSetList, Q_H, RegurlPara, Com_par=NULL
+FIT_CE_Gamma<-function(Res, SizeList, InitAll, SettingList,
+                         ModelSetList, Q_H, RegurlPara, Com_par=NULL
 ){
   
   time_start<-proc.time() 
@@ -57,6 +57,14 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     return(thetas)
   }
   
+  
+  Opt_WeightGamma<-function(j,x,Res,LLambda,Link="identity", weights){
+    fit <- glmnet(x,Res[,j],  family = Gamma(link = Link), weights=weights,
+                  lambda=LLambda[j])
+    as.vector(coef(fit))
+  }
+  
+  
   library(data.table)
   
   
@@ -93,8 +101,8 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   Interc_B<-InitAll$Interc_B_INI 
   Slope_B<-InitAll$Slope_B_INI
   Sigma_theta<-InitAll$Sigma_theta_INI
-  ta<-InitAll$SD#initial values for sd
-  
+ # ta<-InitAll$SD#initial values for sd
+  Shape<-InitAll$Shape
   
   
   if(SettingList$PRINT==T){
@@ -126,8 +134,10 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   
+  
+  
   if(ModelStruc_Bottom=="Main_effect"){
-  #  Q_Aug<-Q_B
+    #  Q_Aug<-Q_B
     
     Poss_AttrUp<- Poss_Attr
     
@@ -224,7 +234,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   
-#  DATA_INDEX_LIST<-lapply(1:J,FindList,data_y=Data_Res, data_x=Data_x,Q_Bm=Q_B)
+  #  DATA_INDEX_LIST<-lapply(1:J,FindList,data_y=Data_Res, data_x=Data_x,Q_Bm=Q_B)
   
   
   
@@ -346,12 +356,13 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     # print(ta)
     
     
-   # print(eps)
+    # print(eps)
     
     
     Pre_LAMBDA<-LAMBDA
     Pre_Sigma_theta<-Sigma_theta
     Pre_Beta<-  Beta
+    PreShape<-Shape
     
     AS<-t(Slope_H)%*%Sigma_theta%*%Slope_H
     
@@ -404,16 +415,22 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     Interc_B_matrix[,]<-I1L%*%t(Interc_B)
     t_Beta1_Mat<-t(Slope_B)
     
+    
+    
     AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
     #########################
-    #  AB[AB<0]<- 0
+    AB[AB<0|AB==0]<- 0.01
     ##########################
+    # shape_est <- fitdistr(Res, "gamma", start = list(shape = 1), fix=list(rate=1/AB))
     
-    PR1<-plogis(Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix)
     
-    PRt1<- PR1[rLN,]
-    PRt2<-1-PRt1
-    PRT1<-ResM*PRt1+ResMN*PRt2
+    # sdd<-rep(ta,each=N*L)
+    ShapeV<-rep(Shape,each=N*L)
+    
+    PRT1[,]<-dgamma(as.vector(ResM),shape= ShapeV,rate=as.vector(AB[rLN,]))
+    
+    
+    
     
     PRTNJL[,]<-rowProds(PRT1)
     PRTNJ<-t(PRTNJL)
@@ -430,6 +447,25 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     PRAA<-NUM/DEMM 
     #default family is gaussian
     
+    # Estimating Shape
+    pc<-apply(PRAA,2, which.max)
+    personAttri<-Poss_AttrUp[pc,]
+    lmm<-personAttri%*%t_Beta1_Mat+rep(1,N)%*%t(Interc_B)
+    lmm[lmm<0.001]<-0.001
+    ABP<-colSums(log(lmm))
+    
+    # Log-likelihood function
+    results <- sapply(1:J, function(j) {
+      optim(
+        par = Shape[j],  # Initial guess for alpha
+        fn = function(alpha) -log_likelihood(j,alpha, ABP=ABP, Y=Res),  # Pass the correct parameters to the log_likelihood function
+        method = "BFGS"
+      )
+    })
+    
+    Uresults<-unlist(results[1,])
+    Shape[ Uresults>0]<- Uresults[ Uresults>0]
+    Shape[ Uresults<0]<- PreShape[ Uresults<0]
     
     
     
@@ -443,19 +479,18 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     PRAV_s<-as.vector(t(PRAA))%*%t(rep(1,J))
     
     
-  
+    
+    Beta<-sapply(1:J,Opt_WeightGamma, x=Data_x, 
+                 Res=Data_Res,weights=WEI, Link="inverse",
+                 LLambda=RegurlPara, simplify = T)
     
     
-    Beta<-sapply(1:J,Opt_WeightFast, x=Data_x, 
-                 Res=Data_Res,weights=WEI, 
-                 LLambda=RegurlPara, family="binomial",simplify = T)
-    
-    Interc_B <- Beta[1,]
-    Slope_B <- t(Beta[-1,])
+    Beta0 <- Beta[1,]*Shape
+    Beta1_Mat <- t(Beta[-1,])*Shape
     colnames(Interc_B)<-NULL
     rownames(Slope_B)<-colnames( Slope_B)<-NULL
     
-    
+   
     
     
     
@@ -601,8 +636,8 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   
-  if( ReturnLikelihood){
-    AS<-t(Slope_H)%*%Sigma_theta%*%Slope_H
+  if(Likelihood){
+    AS<-t(Lam_1)%*%Sigma_theta%*%Lam_1
     
     SdAS<-sqrt(1+diag(AS))
     SdASM[,]<-I1L%*%t(SdAS)
@@ -624,7 +659,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     #  diag(SA[,,l])<-1
     #}
     
-    IAd<-IA*(I1L%*%t(Interc_H))
+    IAd<-IA*(I1L%*%t(Lam_0))
     Fq<-IAd/SdASM
     
     # for(l in 1:L){
@@ -639,22 +674,20 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     
     
     
+    
     PAM[,]<-PA%*%t(I1N)
     
     
-    Interc_B_matrix[,]<-I1L%*%t(Interc_B)
-    t_Beta1_Mat<-t(Slope_B)
+    Beta0_matrix[,]<-I1L%*%t(Beta0)
+    t_Beta1_Mat<-t(Beta1_Mat)
     
-    AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
+    AB<-Poss_AttrUp%*%t_Beta1_Mat+Beta0_matrix
     #########################
-    #  AB[AB<0]<- 0
+    AB[AB<0]<- 0.01
     ##########################
     
-    PR1<-plogis(Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix)
-    
-    PRt1<- PR1[rLN,]
-    PRt2<-1-PRt1
-    PRT1<-ResM*PRt1+ResMN*PRt2
+    ShapeV<-rep(Shape,each=N*L)
+    PRT1[,]<-dgamma(as.vector(ResM),shape= ShapeV,rate=as.vector(AB[rLN,]))
     
     # PR2<-1-PR1
     #  PR1A[,,]<-PR1
@@ -684,6 +717,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   
+  
   if(!is.null(Com_par)){
     KK=ncol(Com_par$Slope_B)
     DD<-nrow(Com_par$Interc_B)
@@ -699,7 +733,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     }else{
       Hungarian=F
     }
-   Slope_B<-Slope_B[, Test$pairs[,2]]
+    Slope_B<-Slope_B[, Test$pairs[,2]]
     
     
     
@@ -713,7 +747,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   time_end<-proc.time()-time_start
   return(list(Slope_H=Slope_H,Interc_H=Interc_H,Sigma_theta=Sigma_theta,
               Interc_B=Interc_B,Slope_B=Slope_B,
-              Slope_B_Pre=Slope_B_Pre,PRAA=PRAA,
+              Slope_B_Pre=Slope_B_Pre,PRAA=PRAA,Shape=Shape,
               time_end=time_end,i=i,LIKELI=LIKELI))
   
   

@@ -17,10 +17,10 @@ source_all("R")
 
 
 ModelSetList<-list(
-  ModelDistri_Bottom="Gamma",
+  ModelDistri_Bottom="Poisson",
   ModelStruc_Bottom="Main_effect",
   ModelStruc_Higher="Subscale",
-  ModelFrame_Bottom="Confirmatory",
+  ModelFrame_Bottom="Exploratory",
   ModelFrame_Higher="Confirmatory"
 )
 
@@ -44,7 +44,7 @@ ModelSetList<-list(
 )
 
 SizeList<-list(
-  N=2000,
+  N=500,
   J=30,
   K=7,
   D=3
@@ -85,12 +85,13 @@ TrueP_List_High<-list(
   Slope_H=Slope_H,
   Interc_H=Interc_H,
   Mu_thetaT=rep(0,D),
-  Sigma_thetaT=Sigma_thetaT,
-  Shape=rep(2,J)
+  Sigma_thetaT=Sigma_thetaT
   
 )
 
 
+##############This is only a procedure for my simulation
+##############Users can input their own true parameters
 ##############This is only a procedure for my simulation
 ##############Users can input their own true parameters
 if(ModelSetList$ModelStruc_Bottom=="Main_effect"){
@@ -105,9 +106,6 @@ if(ModelSetList$ModelStruc_Bottom=="Main_effect"){
   }
   Slope_B<-Beta1_MatT
   Interc_B<-Beta0T
-  
-  
-  Q_Aug<-Q_B
   
   
 }else if(ModelSetList$ModelStruc_Bottom=="All_effect"){
@@ -195,8 +193,7 @@ TrueP_List_Bott<-list(
   Slope_B=Slope_B,
   Interc_B=Interc_B,
   sd=rep(1,J),
-  Q_Aug=Q_Aug,
-  Shape=rep(2,J)
+  Q_Aug=Q_Aug
 )
 
 
@@ -224,7 +221,7 @@ Res<-GenerateData(SizeList,ModelSetList,TrueP_List_Bott,TrueP_List_High,Q_B)
 
 ###Find initial values
 
-InitAll<-INIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_B,Q_H)
+InitAll<-INIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_B=NULL,Q_H)
 InitAll
 
 
@@ -238,7 +235,8 @@ SettingList<-list(
   epsCheck=0.04,
   Passing=3,
   PRINT=T,
-  PR_ITER_NUM=5
+  PR_ITER_NUM=5,
+  RegurlParaVec=c(0.015,0.02)
 )
 
 
@@ -247,8 +245,61 @@ SettingList<-list(
 
 
 ###Fit Models
+time_start<-proc.time()
+FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,Com_par)
+time_end<-proc.time()-time_start
 
-FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,PenaltyList)
+
+
+
+
+#######Check the estimats
+Test_Q<-FIT$Slope_B
+Test_Q[Test_Q!=0]<-1
+Q_Aug1<-TrueP_List_Bott$Slope_B
+Q_Aug1[Q_Aug1!=0]<-1
+
+
+####Should be 0
+sum(Test_Q!=Q_Aug1)
+
+####
+ABias_SlopeB<-abs(FIT$Slope_B-TrueP_List_Bott$Slope_B)
+ABias_InterB<-abs(FIT$Interc_B-TrueP_List_Bott$Interc_B)
+
+
+ABias_SlopeH<-abs(FIT$Slope_H-TrueP_List_High$Slope_H)
+ABias_InterH<-abs(FIT$Interc_H-TrueP_List_High$Interc_H)
+#ABias_sd<-abs(FIT$SD-TrueP_List_Bott$sd)
+ABias_Sigma<-abs(FIT$Sigma_theta-TrueP_List_High$Sigma_thetaT)
+
+
+
+######Print results
+mean(ABias_SlopeB[Q_Aug1!=0])
+mean(ABias_SlopeB[Q_Aug1==0])#Should be 0
+mean(ABias_InterB)
+mean(ABias_SlopeH[t(Q_H)!=0])
+mean(ABias_SlopeH[t(Q_H)==0])#Should be 0
+mean(ABias_InterH)
+#mean(ABias_sd)
+sum(ABias_Sigma)/(SizeList$D^2-D)
+
+print(time_end)
+
+tt1<-which(colSums(TrueP_List_Bott$Slope_B)!=0)
+tt2<-which(colSums(TrueP_List_Bott$Slope_B)==0)
+
+library(pheatmap)
+library(viridis)
+
+par(mfrow = c(1, 2),  oma = c(0, 0, 0, 0))
+heatmap(FIT$Slope_B[, tt1], Colv = NA, Rowv = NA, scale = "none", col = heat.colors(256))
+heatmap(TrueP_List_Bott$Slope_B[, tt1], Colv = NA, Rowv = NA, scale = "none", col = heat.colors(256))
+
+
+heatmap(FIT$Slope_B[, tt2], Colv = NA, Rowv = NA, scale = "none", col = heat.colors(256))
+heatmap(TrueP_List_Bott$Slope_B[, tt2], Colv = NA, Rowv = NA, scale = "none", col = heat.colors(256))
 
 
 

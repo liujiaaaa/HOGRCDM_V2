@@ -1,5 +1,5 @@
 
-FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
+FIT_CE_Poisson<-function(Res, SizeList, InitAll, SettingList,
                      ModelSetList, Q_H, RegurlPara, Com_par=NULL
 ){
   
@@ -127,7 +127,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   if(ModelStruc_Bottom=="Main_effect"){
-  #  Q_Aug<-Q_B
+    #  Q_Aug<-Q_B
     
     Poss_AttrUp<- Poss_Attr
     
@@ -224,7 +224,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
   
   
   
-#  DATA_INDEX_LIST<-lapply(1:J,FindList,data_y=Data_Res, data_x=Data_x,Q_Bm=Q_B)
+  #  DATA_INDEX_LIST<-lapply(1:J,FindList,data_y=Data_Res, data_x=Data_x,Q_Bm=Q_B)
   
   
   
@@ -346,7 +346,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     # print(ta)
     
     
-   # print(eps)
+    # print(eps)
     
     
     Pre_LAMBDA<-LAMBDA
@@ -404,16 +404,17 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     Interc_B_matrix[,]<-I1L%*%t(Interc_B)
     t_Beta1_Mat<-t(Slope_B)
     
+   
+    
     AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
     #########################
-    #  AB[AB<0]<- 0
+    AB[AB<0]<- -AB[AB<0]
     ##########################
     
-    PR1<-plogis(Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix)
     
-    PRt1<- PR1[rLN,]
-    PRt2<-1-PRt1
-    PRT1<-ResM*PRt1+ResMN*PRt2
+    PRT1[,]<-dpois(as.vector(ResM),as.vector(AB[rLN,]))
+    
+   
     
     PRTNJL[,]<-rowProds(PRT1)
     PRTNJ<-t(PRTNJL)
@@ -443,15 +444,14 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     PRAV_s<-as.vector(t(PRAA))%*%t(rep(1,J))
     
     
-  
-    
     
     Beta<-sapply(1:J,Opt_WeightFast, x=Data_x, 
                  Res=Data_Res,weights=WEI, 
-                 LLambda=RegurlPara, family="binomial",simplify = T)
+                 LLambda=RegurlPara, family="poisson",simplify = T)
+
     
-    Interc_B <- Beta[1,]
-    Slope_B <- t(Beta[-1,])
+    Beta0 <- -Beta[1,]
+    Beta1_Mat <- t(Beta[-1,])
     colnames(Interc_B)<-NULL
     rownames(Slope_B)<-colnames( Slope_B)<-NULL
     
@@ -645,16 +645,14 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     Interc_B_matrix[,]<-I1L%*%t(Interc_B)
     t_Beta1_Mat<-t(Slope_B)
     
+    
     AB<-Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix
     #########################
-    #  AB[AB<0]<- 0
+    AB[AB<0]<- -AB[AB<0]
     ##########################
     
-    PR1<-plogis(Poss_AttrUp%*%t_Beta1_Mat+Interc_B_matrix)
     
-    PRt1<- PR1[rLN,]
-    PRt2<-1-PRt1
-    PRT1<-ResM*PRt1+ResMN*PRt2
+    PRT1[,]<-dpois(as.vector(ResM),as.vector(AB[rLN,]))
     
     # PR2<-1-PR1
     #  PR1A[,,]<-PR1
@@ -699,7 +697,7 @@ FIT_CE_LLM<-function(Res, SizeList, InitAll, SettingList,
     }else{
       Hungarian=F
     }
-   Slope_B<-Slope_B[, Test$pairs[,2]]
+    Slope_B<-Slope_B[, Test$pairs[,2]]
     
     
     
