@@ -4,6 +4,14 @@
 
 **HOGRCDM_V2** is an R package accompanying the paper *"Exploratory General-response Cognitive Diagnostic Models with Higher-order Structures."* This package implements the algorithm described in Section 4 of the paper. Although the paper focuses on an exploratory framework, this project has been extended to support confirmatory cases as well. Users can flexibly choose between exploratory and confirmatory settings depending on their analysis requirements.
 
+The package supports multiple measurement models, including:
+- **Main-effect**, **All-effect**, and **DINA** models.
+
+Additionally, it supports a variety of bottom layer distributions:
+- **Lognormal** and **Gamma** for positive continuous responses. These can also be modified to other normal or transformed normal distributions for continuous responses with different value spaces.
+- **Poisson** distribution for count data.
+- **Logistic** distribution for binary data.
+
 ## Project Structure
 
 The project consists of the following directories:
@@ -37,4 +45,5 @@ The primary functions are located in the **R/** folder. Detailed help files for 
 - For exploratory setting with log-normal distribution, use `FIT_CE_Lognormal`.
 - `FIT_CC_Poisson` is used for count data following a Poisson distribution.
 - `FIT_CC_LLM` is used for binary data following a Bernoulli distribution.
+
 
