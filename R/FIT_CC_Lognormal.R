@@ -1,6 +1,6 @@
 
 FIT_CC_Lognormal<-function(Res, SizeList, InitAll, SettingList,
-                                   ModelSetList, Q_H, RegurlPara
+                                   ModelSetList, Q_H, Q_B,RegurlPara
 ){
   
   time_start<-proc.time() 
@@ -516,72 +516,75 @@ Beta<-sapply(1:J, OptBott_Confir, x=Data_x, Res=Data_Res,
     
     # Sigma_theta<-(theta_At)%*%t(theta_At)/(L*IncreSize)
     Sigma_theta<-t(thetas2)%*%thetas2/(IncreSize*N)
-    
+    # 
     if(isBifactor){
       Sigma_theta1<-Sigma_theta[-1,-1]
       D1<-D-1
       Zrs<-tanh(Sigma_theta1)
       diag(Zrs)<-0
       Zrs[lower.tri(Zrs)]<-0
-      
+
       UU<-matrix(NA,D1,D1)
       UU[lower.tri(UU)]<-0
       UU[1,1]<-1
       UU[1,-1]<-Zrs[1,-1]
-      
+
       for(r in 2:D1){
         for(s in r:D1){
-          
+
           if(r==s){
             UU[r,s]<-prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
           } else{
             UU[r,s]<- Zrs[r,s]* prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
           }
-          
-          
+
+
         }
       }
       Sigma_theta[-1,-1]<-t(UU)%*%UU
       Sigma_theta[1,-1]<-0
       Sigma_theta[-1,1]<-0
       Sigma_theta[1,1]<-1
-      
+
       # Sigma_theta[-1,-1]<-cov2cor(Sigma_theta[-1,-1])
       # Sigma_theta[1,-1]<-0
       # Sigma_theta[-1,1]<-0
       # Sigma_theta[1,1]<-1
     }else
     {
-      
+
       #################STAN 1
       Sigma_theta1<-Sigma_theta
       D1<-D
       Zrs<-tanh(Sigma_theta1)
       diag(Zrs)<-0
       Zrs[lower.tri(Zrs)]<-0
-      
+
       UU<-matrix(NA,D1,D1)
       UU[lower.tri(UU)]<-0
       UU[1,1]<-1
       UU[1,-1]<-Zrs[1,-1]
-      
+
       for(r in 2:D1){
         for(s in r:D1){
-          
+
           if(r==s){
             UU[r,s]<-prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
           } else{
             UU[r,s]<- Zrs[r,s]* prod((1-Zrs[(1:(r-1)),s]^2)^(1/2))
           }
-          
-          
+
+
         }
       }
-      
+
       Sigma_theta<-t(UU)%*%UU
-      
-      # Sigma_theta<-cov2cor(Sigma_theta)
+
+      #Sigma_theta<-cov2cor(Sigma_theta)
     }
+    
+    
+    #Sigma_theta<-diag(D)
     
     # Interc_H<- Interc_HT
     #Slope_H[,1:D]<-Slope_HT[,1:D]

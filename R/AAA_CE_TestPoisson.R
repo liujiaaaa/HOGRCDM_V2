@@ -17,6 +17,7 @@ source_all("R")
 
 
 ModelSetList<-list(
+  HigherLayer=T,
   ModelDistri_Bottom="Poisson",
   ModelStruc_Bottom="Main_effect",
   ModelStruc_Higher="Subscale",

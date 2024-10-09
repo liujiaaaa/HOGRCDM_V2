@@ -19,13 +19,25 @@ GenerateData<-function(SizeList,ModelSetList,TrueP_List_Bott,TrueP_List_High,Q_B
     thetaT<-mvrnorm(n=N,TrueP_List_High$Mu_thetaT,TrueP_List_High$Sigma_thetaT)
   }
   
+  if(is.null(ModelSetList$HigherLayer)) ModelSetList$HigherLayer=F
+  
+  
+  if(ModelSetList$HigherLayer==T){
+    AlphaT<-generate4PNO11(A=TrueP_List_High$Slope_H,b= TrueP_List_High$Interc_H,
+                           c=rep(0,K),d=rep(1,K),theta=thetaT,type="4MPNO",
+                           settings=SizeList)$U
+  }else{
+    Prop<-TrueP_List_Bott$TrueProp
+    PossAlpha<-PossATTRIB(K)
+    sam_N<-sample(1:L,size=N,replace=T,prob= Prop)
+    AlphaT<-PossAlpha[sam_N,]
+    
+    
+  }
   
   
   
   
-  AlphaT<-generate4PNO11(A=TrueP_List_High$Slope_H,b= TrueP_List_High$Interc_H,
-                         c=rep(0,K),d=rep(1,K),theta=thetaT,type="4MPNO",
-                         settings=SizeList)$U
   
   
   

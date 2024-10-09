@@ -93,7 +93,7 @@ FIT_E_LLM<-function(Res, SizeList, InitAll, SettingList,
   Interc_B<-InitAll$Interc_B_INI 
   Slope_B<-InitAll$Slope_B_INI
   # Sigma_theta<-InitAll$Sigma_theta_INI
-  ta<-InitAll$SD#initial values for sd
+ # ta<-InitAll$SD#initial values for sd
   
   PLL<-InitAll$PLL
   

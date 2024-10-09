@@ -17,6 +17,7 @@ source_all("R")
 
 
 ModelSetList<-list(
+  HigherLayer=T，
   ModelDistri_Bottom="Gamma",
   ModelStruc_Bottom="Main_effect",
   ModelStruc_Higher="Subscale",
@@ -248,7 +249,7 @@ SettingList<-list(
 
 ###Fit Models
 
-FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,PenaltyList)
+FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,PenaltyList,SettingList)
 
 
 

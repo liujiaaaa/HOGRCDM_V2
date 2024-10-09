@@ -1,57 +1,40 @@
----
-output:
-  html_document: default
-  pdf_document: default
----
-README for HOGRCDM_V2 Project  
+# HOGRCDM_V2
 
-This repository contains an R Project named HOGRCDM_V2 for the paper "Exploratory General-response Cognitive Diagnostic Models with Higher-order Structures."  
+## Overview
 
+**HOGRCDM_V2** is an R package accompanying the paper *"Exploratory General-response Cognitive Diagnostic Models with Higher-order Structures."* This package implements the algorithm described in Section 4 of the paper. Although the paper focuses on an exploratory framework, this project has been extended to support confirmatory cases as well. Users can flexibly choose between exploratory and confirmatory settings depending on their analysis requirements.
 
-This project includes the code for Algorithm 1 in Section 4 of the paper. While the paper focuses on an exploratory scenario, we have extended the project to support confirmatory settings as well, allowing users to flexibly choose between these two settings based on their specific needs.  
+## Project Structure
 
+The project consists of the following directories:
 
----Project Structure
+- **R/**: Contains all the core functions necessary to implement the algorithm.
+- **man/**: Reserved for documentation of the primary functions located in the `R` folder. This folder is currently empty but will be populated with help files soon.
+- **LoadValue/**: Includes true parameters and other values used in trial examples.
+- **MyExample/**: Contains example scripts illustrating the usage of the algorithm for both confirmatory and exploratory cases.
 
---R Folder: This folder contains all the necessary functions required to implement the algorithm.
+## Script Naming Conventions
 
---man Folder: This folder is intended for the help files of the main functions in folder "R". It is currently empty but will be populated soon.
+- Scripts with `"CC"` in the filename refer to confirmatory cases.
+- Scripts with `"CE"` in the filename refer to exploratory cases, as discussed in the paper.
 
---LoadValue Folder: This folder contains the true parameters and other values that may be used when running the trial examples.
+All types of measurement models and distributions are supported, and each script has been successfully tested on the owner's machine.
 
---MyExample Folder: This folder includes example scripts for running the algorithm in both confirmatory and exploratory cases.
+## Main Functions
 
---Script Naming Conventions:
+The primary functions are located in the **R/** folder. Detailed help files for each function will be included in the **man/** folder soon. Below is a brief description of the key functions:
 
--The R scripts with "CC" in the filename are for confirmatory cases.  
+- **LoadingPackages**: Installs and loads all the necessary R packages.
+- **GenerateData**: Generates data for simulation purposes.
+- **INI_HOGRCDM_Main**: Initializes the model.
+- Functions prefixed with `"FIT"`: These are the main functions for running the algorithm, with filenames following the format:
+  
+  `"FIT" + "setting (exploratory/confirmatory)" + "distribution"`
 
--The scripts with "CE" in the filename are for exploratory cases (as discussed in the paper).  
+### Examples:
+  
+- For fitting a model with data following a log-normal distribution in a confirmatory setting, use `FIT_CC_Lognormal`.
+- For exploratory setting with log-normal distribution, use `FIT_CE_Lognormal`.
+- `FIT_CC_Poisson` is used for count data following a Poisson distribution.
+- `FIT_CC_LLM` is used for binary data following a Bernoulli distribution.
 
--All measurement model types and distributions are supported by this project, and all scripts have been successfully tested on the owner's computer.
-
-
-
----Main Functions
-The primary functions used in the project are located in the R folder. Since detailed help files will be added to the man folder soon, a brief overview of the main functions is provided below:
-
---LoadingPackages: This function installs and loads all the required R packages.  
-
-
---GenerateData: This function generates data for simulations.  
-
-
---INI_HOGRCDM_Main: This function initializes the model.  
-
-
---Files with "FIT": These are the main functions for running the algorithms. They are named using the format:  
-
-
-"FIT" + "setting (exploratory/confirmatory)" + "distribution"
-
--To fit a model with data following a log-normal distribution in a confirmatory setting, use the function FIT_CC_Lognormal.  
-
--To fit a model with data following a log-normal distribution in an exploratory setting (as considered in the paper), use FIT_CE_Lognormal.  
-
--FIT_CC_Poisson is for count data following a Poisson distribution.  
-
--FIT_CC_LLM is for binary data following a Bernoulli distribution.

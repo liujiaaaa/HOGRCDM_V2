@@ -1,6 +1,6 @@
 
 FIT_CC_Poisson<-function(Res, SizeList, InitAll, SettingList,
-                     ModelSetList, Q_H, RegurlPara
+                     ModelSetList, Q_H, Q_B,RegurlPara
 ){
   
   time_start<-proc.time() 

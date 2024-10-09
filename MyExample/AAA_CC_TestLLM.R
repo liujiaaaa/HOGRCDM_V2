@@ -17,6 +17,7 @@ source_all("R")
 
 
 ModelSetList<-list(
+  HigherLayer=T,
   ModelDistri_Bottom="LLM",
   ModelStruc_Bottom="DINA",
   ModelStruc_Higher="Bifactor",
@@ -246,7 +247,7 @@ SettingList<-list(
 
 ###Fit Models
 time_start<-proc.time()
-FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,PenaltyList)
+FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,PenaltyList,SettingList)
 time_end<-proc.time()-time_start
 
 

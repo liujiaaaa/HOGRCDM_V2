@@ -17,8 +17,9 @@ source_all("R")
 
 
 ModelSetList<-list(
+  HigherLayer=T,
   ModelDistri_Bottom="LLM",
-  ModelStruc_Bottom="DINA",
+  ModelStruc_Bottom="Main_effect",
   ModelStruc_Higher="Subscale",
   ModelFrame_Bottom="Exploratory",
   ModelFrame_Higher="Confirmatory"
@@ -32,16 +33,17 @@ ModelSetList<-list(
 
 LoadingPackages()
 
-ModelSet<-
-  ModelSetCheck(ModelSetList)
+# ModelSet<-
+#   ModelSetCheck(ModelSetList)
 
-ModelSetList<-list(
-  ModelDistri_Bottom=ModelSet$ModelDistri_Bottom,
-  ModelStruc_Bottom=ModelSet$ModelStruc_Bottom,
-  ModelStruc_Higher=ModelSet$ModelStruc_Higher,
-  ModelFrame_Bottom=ModelSet$ModelFrame_Bottom,
-  ModelFrame_Higher=ModelSet$ModelFrame_Higher
-)
+# ModelSetList<-list(
+#   ModelDistri_Bottom=ModelSet$ModelDistri_Bottom,
+#   ModelStruc_Bottom=ModelSet$ModelStruc_Bottom,
+#   ModelStruc_Higher=ModelSet$ModelStruc_Higher,
+#   ModelFrame_Bottom=ModelSet$ModelFrame_Bottom,
+#   ModelFrame_Higher=ModelSet$ModelFrame_Higher,
+#   HigherLayer=ModelSet$HigherLayer
+# )
 
 SizeList<-list(
   N=500,
@@ -247,7 +249,7 @@ SettingList<-list(
 
 ###Fit Models
 time_start<-proc.time()
-FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,Com_par)
+FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,Com_par,SettingList)
 time_end<-proc.time()-time_start
 
 

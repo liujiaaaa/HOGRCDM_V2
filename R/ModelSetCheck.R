@@ -6,7 +6,7 @@ ModelSetCheck <- function(ModelSetList) {
   ModelStruc_Higher=ModelSetList$ModelStruc_Higher
   ModelFrame_Bottom=ModelSetList$ModelFrame_Bottom
   ModelFrame_Higher=ModelSetList$ModelFrame_Higher
-  
+  HigherLayer=ModelSetList$ HigherLayer
   
   
   ModelDistri_BottomList <- c("Lognormal", "LLM", "Poisson","Gamma")
@@ -14,6 +14,12 @@ ModelSetCheck <- function(ModelSetList) {
   ModelStruc_HigherList <- c("Subscale", "Bifactor")
   ModelFrame_BottomList<-c("Confirmatory", "Exploratory")
   ModelFrame_HigherList<-c("Confirmatory", "Exploratory")
+  
+  if(ModelSetList$HigherLayer==T){
+    cat("Higher order CDM")
+  }else{
+    cat("Single layer CDM")
+  }
   
   
   
@@ -31,11 +37,6 @@ ModelSetCheck <- function(ModelSetList) {
     stop("Error: ModelStruc_Bottom must be one of ", paste(ModelStruc_BottomList, collapse = ", "))
   }
   
-  if (ModelStruc_Higher %in% ModelStruc_HigherList) {
-    print(paste("Higher Layer Model Structure:", ModelStruc_Higher))
-  } else {
-    stop("Error: ModelStruc_Higher must be one of ", paste(ModelStruc_HigherList, collapse = ", "))
-  }
   
   if (ModelFrame_Bottom %in% ModelFrame_BottomList) {
     print(paste("Bottom Layer Model Framework:", ModelFrame_Bottom))
@@ -43,16 +44,26 @@ ModelSetCheck <- function(ModelSetList) {
     stop("Error: ModelFrame_Bottom must be one of ", paste( ModelFrame_BottomList, collapse = ", "))
   }
   
+  if(ModelSetList$HigherLayer==T){
+     if (ModelStruc_Higher %in% ModelStruc_HigherList) {
+    print(paste("Higher Layer Model Structure:", ModelStruc_Higher))
+  } else {
+    stop("Error: ModelStruc_Higher must be one of ", paste(ModelStruc_HigherList, collapse = ", "))
+  }
+  
   if (ModelFrame_Higher %in% ModelFrame_HigherList) {
     print(paste("Higher Layer Model Framework:", ModelFrame_Higher))
   } else {
     stop("Error: ModelFrame_Higher must be one of ", paste( ModelFrame_HigherList, collapse = ", "))
   }
+  }
+  
+ 
   
   
   
 
   return(list(ModelDistri_Bottom=ModelDistri_Bottom,ModelStruc_Bottom=ModelStruc_Bottom,ModelStruc_Higher=ModelStruc_Higher,
-              ModelFrame_Bottom= ModelFrame_Bottom, ModelFrame_Higher= ModelFrame_Higher))
+              ModelFrame_Bottom= ModelFrame_Bottom, ModelFrame_Higher= ModelFrame_Higher,HigherLayer=HigherLayer))
   
 }

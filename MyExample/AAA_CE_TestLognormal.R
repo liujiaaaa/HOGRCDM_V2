@@ -17,6 +17,7 @@ source_all("R")
 
 
 ModelSetList<-list(
+  HigherLayer=T,
   ModelDistri_Bottom="Lognormal",
   ModelStruc_Bottom="Main_effect",
   ModelStruc_Higher="Subscale",
@@ -260,7 +261,7 @@ SettingList<-list(
 
 
 time_start<-proc.time()
-FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,Com_par)
+FIT= FIT_HOGRCDM_Main(ModelSetList,SizeList,Res,Q_H,Com_par,SettingList)
 time_end<-proc.time()-time_start
 
 
