@@ -47,6 +47,6 @@ The primary functions are located in the **R/** folder. Detailed help files for 
 - `FIT_CC_LLM` is used for binary data following a Bernoulli distribution.
 
 ### Data:
-- The RData file named "DataAreBooklet1" contains the dataset used in the Real Data Analysis section of this paper.
+- The RData file named "DataAreBooklet1" contains the dataset used in the Real Data Analysis section of the paper.
 - The TIMSS 2019 data is available at: https://timssandpirls.bc.edu/timss2019/
 - For more information on the data structure, please see Section 7 of the paper.
